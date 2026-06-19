@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400;1,9..144,600;1,9..144,700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", serif;
+  --font-serif: "Fraunces", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom global styles to apply the Artistic Flair */
+body {
+  background-color: #0A0F1D; /* Sleek Deep Night Titanium */
+  color: #E2E8F0; /* Elegant slate white */
+  font-family: var(--font-sans);
+  overflow-y: scroll;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D1527;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #223354;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2DD4BF;
+}
+
+/* Animation Utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.font-serif {
+  font-family: var(--font-display);
+}

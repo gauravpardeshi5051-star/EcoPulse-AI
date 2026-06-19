@@ -1,0 +1,6 @@
+{
+  "name": "EcoPulse AI",
+  "description": "EcoPulse AI is an advanced AI-powered platform designed to tackle climate change by turning complex carbon data into personalized, engaging, gamified, and actionable sustainability experiences.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
