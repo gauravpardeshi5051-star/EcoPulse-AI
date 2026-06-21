@@ -159,6 +159,7 @@ export default function AddLogModal({ isOpen, onClose, onAddLog }: AddLogModalPr
           <button 
             type="button"
             onClick={onClose} 
+            aria-label="Close dialog"
             className="p-1 px-2.5 hover:bg-[#0A0F1D] text-[#E2E8F0]/50 hover:text-white rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -179,6 +180,7 @@ export default function AddLogModal({ isOpen, onClose, onAddLog }: AddLogModalPr
                     key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
+                    aria-label={`Select category ${cat}`}
                     className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-0 transition-all cursor-pointer ${
                       isActive 
                         ? "bg-[#2DD4BF] text-[#0A0F1D] shadow-xs font-bold" 

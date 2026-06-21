@@ -88,6 +88,7 @@ export default function ActiveChallenges({ challenges, onToggleChallenge, loadin
                 type="button"
                 onClick={() => !loading && onToggleChallenge(c.id)}
                 disabled={loading}
+                aria-label={`Toggle challenge: ${c.title}. Potential reduction is ${c.potentialReduction} kilograms of carbon dioxide equivalent per week.`}
                 className={`w-full flex items-start gap-3.5 p-3.5 rounded-2xl text-left border cursor-pointer transition-all ${
                   isCompleted 
                     ? "bg-[#0A0F1D]/50 border-[#223354]/30 opacity-60" 

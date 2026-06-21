@@ -89,6 +89,7 @@ export default function LogsTable({ logs, onDeleteLog, onOpenAddModal }: LogsTab
             <Filter className="w-3.5 h-3.5 text-[#2DD4BF] shrink-0" />
             <button
               onClick={() => handleCategoryFilter("all")}
+              aria-label="Filter logs by all categories"
               className={`px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 transition-all cursor-pointer ${
                 selectedCategory === "all" 
                   ? "bg-[#2DD4BF] text-[#0A0F1D]" 
@@ -103,6 +104,7 @@ export default function LogsTable({ logs, onDeleteLog, onOpenAddModal }: LogsTab
                 <button
                   key={cat}
                   onClick={() => handleCategoryFilter(cat)}
+                  aria-label={`Filter logs by category ${cat === "offset" ? "offsets" : cat}`}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 transition-all capitalize cursor-pointer ${
                     isActive 
                       ? "bg-[#2DD4BF] text-[#0A0F1D]" 
@@ -188,6 +190,7 @@ export default function LogsTable({ logs, onDeleteLog, onOpenAddModal }: LogsTab
                       <button
                         type="button"
                         onClick={() => onDeleteLog(log.id)}
+                        aria-label={`Delete activity record: ${getSubcategoryName(log.category, log.subcategory)} recorded on ${log.date}`}
                         className="p-2 text-[#E2E8F0]/40 hover:text-[#FF6B6B] rounded-lg hover:bg-[#FF6B6B]/15 border-0 cursor-pointer transition-all"
                         title="Delete log"
                       >

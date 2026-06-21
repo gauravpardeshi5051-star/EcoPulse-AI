@@ -154,6 +154,7 @@ export default function Achievements({ logs, streak, challenges }: AchievementsP
             <button
               key={badge.id}
               onClick={() => setSelectedBadge(badge)}
+              aria-label={`View details for badge ${badge.title}. Progress is ${progress.current} out of ${progress.target}.`}
               className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
                 unlocked
                   ? "bg-[#0D1527] border-[#2dd4bf]/30 hover:border-[#2dd4bf]/70 hover:shadow-[0_0_15px_-3px_rgba(45,212,191,0.2)]"
