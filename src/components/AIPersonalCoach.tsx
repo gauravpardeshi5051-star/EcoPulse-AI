@@ -159,7 +159,9 @@ export default function AIPersonalCoach({ messages, onSendMessage, loading, onCl
 
       {/* Control Input drawer */}
       <form onSubmit={handleSubmit} className="p-4 border-t border-[#223354] bg-[#111A2E] flex gap-2.5 items-center shrink-0">
+        <label htmlFor="id_chat_input" className="sr-only">Ask Carbon Coach sustainability question</label>
         <input
+          id="id_chat_input"
           type="text"
           placeholder="Ask Carbon Coach sustainability queries..."
           value={inputText}

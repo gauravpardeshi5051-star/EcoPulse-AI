@@ -235,13 +235,15 @@ export default function AddLogModal({ isOpen, onClose, onAddLog }: AddLogModalPr
 
             {/* Slider */}
             <input
+              id="id_amount_slider"
               type="range"
               min={sliderConfig.min}
               max={sliderConfig.max}
               step={sliderConfig.step}
               value={amount}
               onChange={handleSliderChange}
-              className="w-full h-1.5 bg-[#223354] rounded-lg appearance-none cursor-pointer accent-[#2DD4BF] mt-2.5"
+              aria-label="Emission amount range slider"
+              className="w-full h-1.5 bg-[#223354] rounded-lg appearance-none cursor-pointer accent-[#2DD4BF] mt-2.5 focus:outline-hidden focus:ring-1 focus:ring-[#2DD4BF]"
             />
           </div>
 

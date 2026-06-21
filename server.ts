@@ -120,7 +120,20 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Manual high-compliance security headers middleware with support for Google AI Studio framing
+  app.use((req: Request, res: Response, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: referrer; connect-src 'self' https://api.github.com https://generativelanguage.googleapis.com; frame-ancestors 'self' https://*.google.com https://*.run.app https://*.googleusercontent.com;"
+    );
+    next();
+  });
+
+  // Strict payload threshold protection to defend against volumetric DoS
+  app.use(express.json({ limit: "50kb" }));
 
   // --- API ROUTES ---
 
@@ -138,7 +151,7 @@ async function startServer() {
     res.json(logs);
   });
 
-  // Add a new carbon log
+  // Add a new carbon log with strict input sanitization and verification bounds
   app.post("/api/logs", (req: Request, res: Response) => {
     try {
       const { category, subcategory, amount, unit, co2e, notes, date } = req.body;
@@ -148,16 +161,57 @@ async function startServer() {
         return;
       }
 
+      // Assert Category authenticity
+      const validCategories = ["transport", "energy", "diet", "consumption", "offset"];
+      if (typeof category !== "string" || !validCategories.includes(category)) {
+        res.status(400).json({ error: "The provided log category is invalid or unsupported." });
+        return;
+      }
+
+      // Validate specifications values lengths to deny buffer exploits
+      if (typeof subcategory !== "string" || subcategory.length > 80) {
+        res.status(400).json({ error: "Subcategory name must be a string under 80 characters." });
+        return;
+      }
+
+      if (typeof unit !== "string" || unit.length > 25) {
+        res.status(400).json({ error: "Unit field must be a valid string identifier under 25 characters." });
+        return;
+      }
+
+      const numAmount = Number(amount);
+      const numCo2e = Number(co2e);
+      if (isNaN(numAmount) || isNaN(numCo2e) || !isFinite(numAmount) || !isFinite(numCo2e)) {
+        res.status(400).json({ error: "The log amount and computed CO2e level must be valid, finite numbers." });
+        return;
+      }
+
+      // Check for extreme outliers or malicious metric values
+      if (Math.abs(numAmount) > 1000000 || Math.abs(numCo2e) > 100000) {
+        res.status(400).json({ error: "Numerical coordinates exceed healthy climate metric ranges." });
+        return;
+      }
+
+      // Clean HTML and special characters from notes to limit persistent XSS vectors
+      const cleanNotes = typeof notes === "string" 
+        ? notes.slice(0, 150).replace(/[$\{\}<>&]/g, "").trim() 
+        : "";
+
       const logs = loadJSON<any[]>(LOGS_FILE, []);
+      // Cap log arrays database to prevent resource exhaustion attacks (DoS)
+      if (logs.length >= 800) {
+        logs.shift(); // Evict oldest log entry
+      }
+
       const newLog = {
         id: "log_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
         category,
         subcategory,
-        amount: Number(amount),
+        amount: numAmount,
         unit,
-        co2e: Number(co2e),
-        notes: notes || "",
-        date,
+        co2e: numCo2e,
+        notes: cleanNotes,
+        date: String(date).slice(0, 10),
         createdAt: new Date().toISOString()
       };
 
@@ -166,7 +220,7 @@ async function startServer() {
 
       res.status(201).json(newLog);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "An unexpected system exception occurred recording this carbon trace." });
     }
   });
 
@@ -236,7 +290,7 @@ async function startServer() {
     res.json(budgetData);
   });
 
-  // Save monthly carbon budget and settings
+  // Save monthly carbon budget and profile setup under defensive guidelines
   app.post("/api/budget", (req: Request, res: Response) => {
     try {
       const { monthlyBudget, profileArchetype } = req.body;
@@ -247,21 +301,27 @@ async function startServer() {
       });
 
       if (monthlyBudget !== undefined) {
-        if (isNaN(Number(monthlyBudget)) || Number(monthlyBudget) <= 0) {
-          res.status(400).json({ error: "Invalid monthly budget value. It must be a positive number." });
+        const numBudget = Number(monthlyBudget);
+        if (isNaN(numBudget) || numBudget <= 0 || !isFinite(numBudget) || numBudget > 100000) {
+          res.status(400).json({ error: "Invalid monthly budget level. It must be a positive finite value under 100,000." });
           return;
         }
-        savedData.monthlyBudget = Number(monthlyBudget);
+        savedData.monthlyBudget = numBudget;
       }
 
       if (profileArchetype !== undefined) {
+        const validArchetypes = ["individual", "digital_nomad", "corporate", "small_business"];
+        if (typeof profileArchetype !== "string" || !validArchetypes.includes(profileArchetype)) {
+          res.status(400).json({ error: "Provided profile setting is unknown or unsupported." });
+          return;
+        }
         savedData.profileArchetype = profileArchetype;
       }
 
       saveJSON(BUDGET_FILE, savedData);
       res.json(savedData);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to persist profile configuration updates safely." });
     }
   });
 
@@ -529,9 +589,15 @@ You can ask me questions about transport alternatives, eco energy tips, diet car
         return;
       }
 
+      // Defend against deep chat payload abuse: restrict to latest 20 conversations, limit length of message contents
+      const trimmedMessages = messages.slice(-20).map((m: any) => ({
+        role: m.sender === "user" ? "user" : "model",
+        parts: [{ text: String(m.text || "").slice(0, 800).replace(/[$\{\}<>&]/g, "").trim() }]
+      }));
+
       if (!isGeminiConfigured()) {
         const lastUser = messages[messages.length - 1];
-        res.json(buildLocalFallbackChat(lastUser ? lastUser.text : ""));
+        res.json(buildLocalFallbackChat(lastUser ? String(lastUser.text).slice(0, 500) : ""));
         return;
       }
 
@@ -544,12 +610,6 @@ You can ask me questions about transport alternatives, eco energy tips, diet car
       - Offsets Logged: ${totalCO2LinesByCat.offset || 0} kg CO2e
       - Total Logs Count: ${logs.length}
       `;
-
-      // Set up simple chat history message formatting for generateContent
-      const formattedContents = messages.map(msg => ({
-        role: msg.sender === "user" ? "user" : "model",
-        parts: [{ text: msg.text }]
-      }));
 
       // Load current profile archetype context to tailor chatbot response
       const budgetData = loadJSON<{ monthlyBudget: number; profileArchetype?: string }>(BUDGET_FILE, { 
@@ -582,7 +642,7 @@ You can ask me questions about transport alternatives, eco energy tips, diet car
       const client = getGeminiClient();
       const response = await client.models.generateContent({
         model: "gemini-3.5-flash",
-        contents: formattedContents,
+        contents: trimmedMessages,
         config: {
           systemInstruction: systemInstruction,
           temperature: 0.7
@@ -614,7 +674,12 @@ You can ask me questions about transport alternatives, eco energy tips, diet car
     console.log("Vite middleware mounted for development reload.");
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    // Leverage optimal static assets cache-headers for fast loading performance
+    app.use(express.static(distPath, {
+      maxAge: "30d",
+      etag: true,
+      immutable: true
+    }));
     app.get("*", (req: Request, res: Response) => {
       res.sendFile(path.join(distPath, "index.html"));
     });

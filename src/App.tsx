@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   Leaf, 
   Flame, 
@@ -33,6 +33,7 @@ import ClimateLeaderboard from "./components/ClimateLeaderboard";
 
 export default function App() {
   const [logs, setLogs] = useState<CarbonLog[]>([]);
+  const initialInsightsTriggered = useRef(false);
   const [challenges, setChallenges] = useState<EcoChallenge[]>([]);
   const [insights, setInsights] = useState<any>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -233,14 +234,15 @@ export default function App() {
 
   // Soft trigger insights calculations when logs are populated initially
   useEffect(() => {
-    if (logs.length > 0 && !insights && geminiConfigured) {
+    if (logs.length > 0 && !insights && geminiConfigured && !initialInsightsTriggered.current) {
+      initialInsightsTriggered.current = true;
       // Small debounce
       const timeout = setTimeout(() => {
         handleGenerateInsights();
       }, 1200);
       return () => clearTimeout(timeout);
     }
-  }, [logs]);
+  }, [logs.length, geminiConfigured, insights]);
 
   // 4. Create new carbon log implementation
   const handleAddLog = async (newLogData: Omit<CarbonLog, "id" | "createdAt">) => {
@@ -584,7 +586,9 @@ export default function App() {
               {isEditingBudget ? (
                 <div className="mt-2.5 space-y-1.5" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1.5">
+                    <label htmlFor="id_budget_input" className="sr-only">Monthly budget target in kg CO2e</label>
                     <input
+                      id="id_budget_input"
                       type="number"
                       value={budgetValueInput}
                       onChange={(e) => setBudgetValueInput(e.target.value)}

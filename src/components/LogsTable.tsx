@@ -73,8 +73,10 @@ export default function LogsTable({ logs, onDeleteLog, onOpenAddModal }: LogsTab
         {/* Search & Filter row */}
         <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="relative">
+            <label htmlFor="id_search_input" className="sr-only">Search logs by note or subcategory</label>
             <Search className="w-4 h-4 text-[#2DD4BF] absolute left-3 top-3.5" />
             <input
+              id="id_search_input"
               type="text"
               placeholder="Search by note/subcategory..."
               value={searchQuery}
